@@ -64,6 +64,8 @@ typedef struct
     char *input;
     char *export;
     float scale;
+    int width;
+    int height;
 
     const char *script;
     int script_args_nb;
@@ -86,6 +88,8 @@ static const gox_option_t OPTIONS[] = {
     {"export", 'e', required_argument, "FILENAME",
         .help="Export the image to a file"},
     {"scale", 's', required_argument, "FLOAT", .help="Set UI scale"},
+    {"width", 'w', required_argument, "INT", .help="Set window width"},
+    {"height", 'h', required_argument, "INT", .help="Set window height"},
     {"script", OPT_SCRIPT, required_argument, "FILENAME",
         .help="Run a script and exit"},
     {"help", OPT_HELP, .help="Give this help list"},
@@ -135,7 +139,7 @@ static void parse_options(int argc, char **argv, args_t *args)
     }
 
     while (true) {
-        c = getopt_long(argc, argv, "e:s:", long_options, &option_index);
+        c = getopt_long(argc, argv, "e:s:w:h:", long_options, &option_index);
         if (c == -1) break;
         switch (c) {
         case 'e':
@@ -143,6 +147,12 @@ static void parse_options(int argc, char **argv, args_t *args)
             break;
         case 's':
             args->scale = atof(optarg);
+            break;
+        case 'w':
+            args->width = atoi(optarg);
+            break;
+        case 'h':
+            args->height = atoi(optarg);
             break;
         case OPT_HELP:
             print_help();
@@ -367,7 +377,7 @@ static bool open_dialog(
 
 int main(int argc, char **argv)
 {
-    args_t args = {.scale = 1};
+    args_t args = {.scale = 1, .width = 640, .height = 480};
     GLFWwindow *window;
     GLFWmonitor *monitor;
     const GLFWvidmode *mode;
@@ -389,9 +399,10 @@ int main(int argc, char **argv)
     glfwWindowHint(GLFW_SAMPLES, 4);
     glfwWindowHint(GLFW_DOUBLEBUFFER, GLFW_TRUE);
 
-    // Is there a clean way to create a maximized window
-    // that works both on Windows, Mac and Linux?
-    if (!DEFINED(WIN32)) {
+    if (args.width && args.height) {
+        window = glfwCreateWindow(args.width, args.height, "Goxel", NULL, NULL);
+        assert(window);
+    } else if (!DEFINED(WIN32)) {
         monitor = glfwGetPrimaryMonitor();
         mode = glfwGetVideoMode(monitor);
         if (mode) {
@@ -403,7 +414,7 @@ int main(int argc, char **argv)
         glfwSetWindowPos(window, 0, 0);
     } else {
         glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
-	window = glfwCreateWindow(width, height, "Goxel", NULL, NULL);
+        window = glfwCreateWindow(width, height, "Goxel", NULL, NULL);
         assert(window);
     }
 
